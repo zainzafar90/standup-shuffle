@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Standup Shuffle",
     description: "A simple tool to shuffle your standup names",
-    images: ["/og.webp"],
+    images: ["/og.png"],
   },
 };
 
