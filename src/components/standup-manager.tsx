@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Shuffle, Trash2 } from "lucide-react";
+import { Plus, Shuffle, Trash2, X } from "lucide-react";
 import { cn, shuffleArray } from "@/lib/utils";
 import {
   AlertDialog,
@@ -29,11 +29,11 @@ const themes = [
   { bg: "bg-orange-900", emoji: "🎃", name: "Autumn" },
   { bg: "bg-blue-900", emoji: "🌠", name: "Night" },
   { bg: "bg-lime-900", emoji: "🍀", name: "Luck" },
-  { bg: "bg-fuchsia-900", emoji: "🎆", name: "Festival" },
 ];
 
 const NAMES_STORAGE_KEY = "standup-manager-names";
 const THEME_STORAGE_KEY = "standup-manager-theme";
+const MAX_NAMES = 100;
 
 export default function StandupManager() {
   const [names, setNames] = useState<string[]>([]);
@@ -58,6 +58,9 @@ export default function StandupManager() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (names.length >= MAX_NAMES) {
+      return;
+    }
     if (newName.trim()) {
       const updatedNames = [...names, newName.trim()];
       setNames(updatedNames);
@@ -73,7 +76,21 @@ export default function StandupManager() {
   };
 
   const handleShuffle = () => {
-    const shuffledNames = shuffleArray([...names]);
+    let shuffledNames = shuffleArray([...names]);
+
+    let samePositionCount = names.filter(
+      (name, index) => name === shuffledNames[index]
+    ).length;
+    let maxAttempts = 5;
+
+    while (samePositionCount > names.length / 2 && maxAttempts > 0) {
+      shuffledNames = shuffleArray([...names]);
+      samePositionCount = names.filter(
+        (name, index) => name === shuffledNames[index]
+      ).length;
+      maxAttempts--;
+    }
+
     const nextTheme = (currentTheme + 1) % themes.length;
 
     setNames(shuffledNames);
@@ -88,6 +105,12 @@ export default function StandupManager() {
     localStorage.setItem(NAMES_STORAGE_KEY, JSON.stringify([]));
     setCurrentTheme(0);
     localStorage.setItem(THEME_STORAGE_KEY, "0");
+  };
+
+  const handleDeleteName = (indexToDelete: number) => {
+    const updatedNames = names.filter((_, index) => index !== indexToDelete);
+    setNames(updatedNames);
+    localStorage.setItem(NAMES_STORAGE_KEY, JSON.stringify(updatedNames));
   };
 
   if (isLoading) {
@@ -151,12 +174,26 @@ export default function StandupManager() {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Enter team member's name"
-            className="flex-1 px-4 py-3 rounded-full bg-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/20"
+            placeholder={
+              names.length >= MAX_NAMES
+                ? "Maximum limit reached"
+                : "Enter team member's name"
+            }
+            disabled={names.length >= MAX_NAMES}
+            className={cn(
+              "flex-1 px-4 py-3 rounded-full bg-white/10 text-white placeholder-white/50",
+              "focus:outline-none focus:ring-2 focus:ring-white/20",
+              names.length >= MAX_NAMES && "opacity-50 cursor-not-allowed"
+            )}
           />
           <button
             onClick={handleSubmit}
-            className="aspect-square h-12 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-300 flex items-center justify-center"
+            disabled={names.length >= MAX_NAMES}
+            className={cn(
+              "aspect-square h-12 rounded-full bg-white/10 hover:bg-white/20",
+              "transition-colors duration-300 flex items-center justify-center",
+              names.length >= MAX_NAMES && "opacity-50 cursor-not-allowed"
+            )}
             aria-label="Add team member"
           >
             <Plus className="w-5 h-5" />
@@ -182,11 +219,34 @@ export default function StandupManager() {
             {names.map((name, index) => (
               <div
                 key={`${name}-${index}`}
-                className="w-full flex items-center gap-2 justify-center text-xl"
+                className="w-full flex items-center gap-2 justify-center text-xl transform transition-all duration-300 ease-in-out hover:scale-102"
               >
-                <span className="w-full text-center flex justify-between py-2 px-4 rounded-full bg-white/10">
-                  <span className="text-white/50 mr-auto">{index + 1}.</span>
-                  <span className="flex-1 w-full">{name}</span>
+                <span
+                  className={cn(
+                    "w-full text-center flex justify-between items-center py-2 px-4 rounded-full",
+                    "bg-white/10 group transition-all duration-300",
+                    "hover:bg-white/20 hover:shadow-lg",
+                    "animate-in fade-in-0 slide-in-from-left-5"
+                  )}
+                >
+                  <span className="text-white/50 mr-auto transition-opacity">
+                    {index + 1}.
+                  </span>
+                  <span className="flex-1 w-full transition-transform">
+                    {name}
+                  </span>
+                  <button
+                    onClick={() => handleDeleteName(index)}
+                    className={cn(
+                      "opacity-0 group-hover:opacity-100",
+                      "transition-all duration-300",
+                      "p-1 hover:bg-white/10 rounded-full",
+                      "hover:rotate-90 transform"
+                    )}
+                    aria-label={`Remove ${name}`}
+                  >
+                    <X className="w-4 h-4 text-white/70" />
+                  </button>
                 </span>
               </div>
             ))}
