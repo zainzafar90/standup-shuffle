@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     url: "https://standup-shuffle.vercel.app",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og.png",
         width: 1200,
         height: 630,
         alt: "Standup Shuffle Preview",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Standup Shuffle",
     description: "A simple tool to shuffle your standup names",
-    images: ["/og-image.png"],
+    images: ["/og.png"],
   },
 };
 
